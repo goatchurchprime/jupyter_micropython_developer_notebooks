@@ -1,0 +1,2 @@
+# jupyter_micropython_developer_notebooks
+Notebooks used for developing jupyter_micropython_kernel against
