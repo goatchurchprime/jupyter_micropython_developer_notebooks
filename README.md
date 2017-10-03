@@ -1,2 +1,4 @@
 # jupyter_micropython_developer_notebooks
-Notebooks used for developing jupyter_micropython_kernel against
+
+See https://github.com/goatchurchprime/jupyter_micropython_kernel for the 
+project that uses these notebooks
