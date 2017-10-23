@@ -1,0 +1,19 @@
+1. Try green light pulse sensors in an oscilloscope
+to see how to get a clean signal
+
+2. Use
+    commissioning_new_esp32
+to get a new ESP32 working    
+
+3. Work through 
+    make_adc_readings.ipynb
+to make some test measurements
+    
+4. The measurements will be saved to a file, so use:
+    plot_adc_measurements
+to plot them
+    
+    
+5. Code for acquiring multiple measurements that are smoothed
+    make_multi_adc_readings
+    
