@@ -47,3 +47,19 @@ def MS5611convert(D1, D2):
             SENS -= 11*rb / 2 
         TEMP -= T2; 
     return (SENS * D1 / 0x200000 - OFF) / 0x8000 
+
+
+# takes the library module as an argument to save importing it here
+async def aMS5611read(uasyncio):
+    i2c.writeto(0x77, b'\x48')
+    await uasyncio.sleep_ms(20)
+    r = i2c.readfrom_mem(0x77, 0x00, 3)
+    D1 = r[0]*0x10000 + r[1]*0x100 + r[2]
+    
+    i2c.writeto(0x77, b'\x58')
+    await uasyncio.sleep_ms(20)
+    r = i2c.readfrom_mem(0x77, 0x00, 3)
+    D2 = r[0]*0x10000 + r[1]*0x100 + r[2]
+    
+    return MS5611convert(D1, D2)
+
