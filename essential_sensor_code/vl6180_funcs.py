@@ -1,7 +1,6 @@
 import ustruct, time
 from i2cmodule import i2c
 
-i2c = machine.I2C(scl=machine.Pin(5), sda=machine.Pin(4))
 
 def set_reg8(address, value):
     i2c.writeto(0x29, ustruct.pack('>HB', address, value))
