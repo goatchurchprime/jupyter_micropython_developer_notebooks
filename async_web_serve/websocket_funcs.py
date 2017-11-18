@@ -1,4 +1,5 @@
 import time, ustruct, uhashlib, ubinascii
+from syslog import log, elog, powid
 import uasyncio
 
 async def initiatewebsocket(w, secwebsocketkey):
@@ -27,10 +28,10 @@ async def wsread(reader, wsid):
         rex = await reader.readexactly(1)
         if len(rex) != 0:
             break
-        print("[WS%d readexactly]"%wsid, [rex])
+        log("[WS%d readexactly]"%wsid, [rex])
     opcode = (rex)[0] & 0x0F  # 8 means close
     if opcode == 8:
-        print("[WS%d close]"%wsid)
+        log("[WS%d close]"%wsid)
         return None
     
     v = (await reader.readexactly(1))[0]
