@@ -5,6 +5,7 @@ si = network.WLAN(network.STA_IF)
 macaddress = "".join("{:02x}".format(x)  for x in si.config("mac"))
 si.active(True)
 
+# wificodes are lines in form "name:password:"
 knownwifis = dict(k.split(b":")[:2]  for k in open("wificodes.txt", "rb"))
 print("Scanning wifis:", ", ".join(s.decode()  for s in knownwifis))
 

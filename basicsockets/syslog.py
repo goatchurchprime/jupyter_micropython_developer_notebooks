@@ -18,12 +18,12 @@ def elog(e):
     slout.flush()
     print("ELOG", [e])
 
-def log(m, m1=None):
+def log(m, m1=""):
     st = str(time.time())
     slout.write(st)
     slout.write(" ")
     slout.write(str(m))
-    if m1 is not None:
+    if m1 != "":
         slout.write(" ")
         slout.write(str(m1))
     slout.write("\n")
