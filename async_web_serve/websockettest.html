@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>WebSocket Client</title></head>
+<body>
+
+Received: <br/>
+<div id="response">(Received content)</div>
+<div id="responselength"></div>
+    
+<input type="text" name="enter" class="enter" value="" id="lolz"/>
+<input type="button" value="click" onclick="sendws();"/>
+    
+<script>
+var bb = null; 
+var ws = new WebSocket("ws://" + location.hostname + ":" + location.port);
+ws.onerror = function(e) {
+    console.log(e)
+    alert("websocket no good");
+};
+
+ws.onopen = function() {
+    ws.send("Hello");
+};
+ws.onmessage = function (evt) {
+    console.log(evt); 
+    bb = evt; 
+    if (typeof evt.data === "string") {
+        document.getElementById("response").innerHTML = evt.data; 
+        document.getElementById("responselength").innerHTML = evt.data.length; 
+        
+    } else {
+        var reader = new FileReader(); 
+        reader.addEventListener("loadend", function() {
+            var s = new Int8Array(reader.result)
+            document.getElementById("response").innerHTML = s.toString();
+        }); 
+        reader.readAsArrayBuffer(evt.data); 
+    }
+};
+    
+function sendws() { 
+    ws.send(document.getElementById('lolz').value);
+}
+    
+</script>
+z</body>
+</html>

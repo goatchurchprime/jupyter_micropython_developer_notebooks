@@ -63,13 +63,13 @@ async def wsreadprintloop(reader, wscondition):
         if res is None:
             wscondition[1] = 0   # closed condition
             break
-        print("[WS%d]"%wscondition[0], res)
+        log("[WS%d]"%wscondition[0], res)
         
         # pass any important messages through into this sequence! 
         # (not seen as a signal, but picked up next time that task wakes up)
         wscondition.append(res)  
         
-    print("[WS%d rlleave]"%wscondition[0])
+    log("[WS%d rlleave]"%wscondition[0])
 
 # this creates the wscondition structure that links the reader and the writer
 WScount = 0
