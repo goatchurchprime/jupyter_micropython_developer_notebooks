@@ -83,6 +83,6 @@ def init2():
 
 def distmm():
     set_reg8(0x0018, 0x01) # Sysrange start
-    time.sleep(0.01)
+    time.sleep_ms(10)
     return get_reg8(0x0062) # Result range value
 
