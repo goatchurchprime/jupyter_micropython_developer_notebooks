@@ -33,6 +33,7 @@ def GetBME280calibrations(i2c):
     return dc
 
 
+# this doesn't need an async version as there is no sleep in this; the sensor is triggering it's own readings
 def readBME280(tph, dc, readout, i2c):
     # burst readout from 0xF7 to 0xFE, recommended by datasheet
     i2c.readfrom_mem_into(0x77, 0xF7, readout)
