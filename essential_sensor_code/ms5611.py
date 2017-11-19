@@ -60,3 +60,16 @@ def ms5611gen(i2c):
         
         yield MS5611convert(dc)/256
         
+
+async def ams5611read(dc, readout, i2c, uasyncio):
+    i2c.writeto(0x77, b'\x48')
+    await uasyncio.sleep_ms(20)
+    i2c.readfrom_mem_into(0x77, 0x00, readout)
+    dc[dD1] = (readout[0]<<16) | (readout[1]<<8) | readout[2]
+
+    i2c.writeto(0x77, b'\x58')
+    await uasyncio.sleep_ms(20)
+    i2c.readfrom_mem_into(0x77, 0x00, readout)
+    dc[dD2] = (readout[0]<<16) | (readout[1]<<8) | readout[2]
+        
+       
