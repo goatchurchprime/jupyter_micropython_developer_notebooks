@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>canvas · Animated Chart</title>
+<style media="screen">
+body { background: #333; color: #fff;  }
+#holder {
+    position: absolute; 
+    left: 0; 
+    top: 0;
+    margin: 0 0 0 0;
+    width: 100%;
+    height: 100%; 
+    border: thin blue solid;
+}
+#controls { bottom: 0; left: 0; position: absolute; }
+#controls input[type="button"] { border: 6px; font-size: 150% }
+#channelselect { font-size: 150% }
+#controls input[type="button"]:hover { background-color: yellow }
+#controls input[type="text"] { border: 2px; width: 50px }
+#response { background-color: #880; }
+#hpanel { font-size: 200% }
+#hpanel:hover { color: #FF0 }
+
+</style>
+<script>
+
+var width = 900;  
+var height = 200; 
+
+var vals = [ ]; 
+var velocities = [ ]; 
+var velocitiesBuff = [ ]; 
+for (var i = 0; i < 80; i++) {
+    //vals.push((i%10)/9/2+0.25); 
+    vals.push(0.5); 
+    velocities.push(0); 
+    velocitiesBuff.push(0); 
+}
+
+function clamp(x) {
+    x = parseInt(x); 
+    if (x < 0)  return 0; 
+    if (x >= 256)  return 255; 
+    return x; 
+}
+
+var bmove = true; 
+
+var pointedatnode = -1; 
+var midforce = 0.008;  // towards the 0.5 position
+var neighbourforce = 0.1; 
+var velstep = 0.25; 
+var veldamp = 0.996; 
+function iterate() {
+    for (var i = 0; i < vals.length; i++) {
+        var dminus = (i > 0 ? vals[i-1] : 0.5) - vals[i]; 
+        var dplus = (i < vals.length-1 ? vals[i+1] : 0.5) - vals[i]; 
+        velocitiesBuff[i] = velocities[i]*veldamp + (dminus + dplus)*neighbourforce + (0.5 - vals[i])*midforce; 
+    }
+    for (var i = 0; i < vals.length; i++) {
+        velocities[i] = velocitiesBuff[i]; 
+        vals[i] += velocities[i]*velstep; 
+    }
+    if (pointedatnode != -1) {
+        vals[pointedatnode] = 1; 
+        velocities[pointedatnode] = 0; 
+    }
+}
+
+function plot() {
+    var c = document.getElementById("holder");
+    c.width = width;  // clears
+    c.height = height; 
+    
+    var ctx = c.getContext("2d");
+    ctx.font="30px Georgia";
+    for (var i = 0; i < vals.length; i++) {
+        
+        var v = (vals[i]-0.5)*3 + 0.5; 
+        var h = clamp(v*256)/256*360; 
+        var s = 0.99; 
+        var l = 0.3+v*0.7;
+         
+        h = (h % 360) / 60;
+        var C = 2 * s * (l < .5 ? l : 1 - l);
+        var X = C * (1 - Math.abs(h % 2 - 1));
+        var R = G = B = l - C / 2;
+
+        h = ~~h;
+        R += [C, X, 0, 0, X, C][h];
+        G += [X, C, C, X, 0, 0][h];
+        B += [0, 0, X, C, C, X][h];
+
+        var blue = B*255; 
+        var red = R*255; 
+        var green = G*255; 
+        ctx.fillStyle = "#" + (16777216 | clamp(blue) | (clamp(green) << 8) | (clamp(red) << 16)).toString(16).slice(1); 
+        ctx.fillText("*", width*(i+1)/(vals.length+2), height*(0.25 + vals[i]*0.5*(bmove ? 1 : 0)));
+        ctx.stroke(); 
+    }
+}
+
+window.onload = function() {
+    setInterval(function() {   
+        iterate(); 
+        plot(); 
+    }, 10); 
+    
+    document.getElementById("hpanel").onmouseenter = function() {
+        pointedatnode = 0; 
+    };
+    document.getElementById("hpanel").onmouseleave = function() {
+        pointedatnode = -1; 
+    };
+
+    document.getElementById("hpanel2").onmouseenter = function() {
+        pointedatnode = 30; 
+    };
+    document.getElementById("hpanel2").onmouseleave = function() {
+        pointedatnode = -1; 
+    };
+    
+}; 
+
+window.addEventListener("resize", function() {
+    var rholder = document.getElementById("holder"); 
+    width = rholder.offsetWidth; 
+    height = rholder.offsetHeight; 
+}); 
+
+
+
+</script>
+</head>
+<body>
+
+<canvas id="holder"></canvas>
+     
+<div id="controls">
+    <input type="button" id="hpanel" value="hover here"/>
+    <input type="button" id="hpanel2" value="hover there"/>
+    <input type="button" id="togmovement" value="stop movement" onclick="bmove=!bmove"/>
+</div>
+
+</body>
+</html>
+
