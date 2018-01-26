@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>canvas · Animated Chart</title>
+<style media="screen">
+body { background: #333; color: #fff;  }
+#holder {
+    position: absolute; 
+    left: 0; 
+    top: 0;
+    margin: 0 0 0 0;
+    width: 100%;
+    height: 100%; 
+    border: thin blue solid;
+}
+#controls { bottom: 0; right: 0; position: absolute; }
+#controls input[type="button"] { border: 6px; font-size: 150% }
+#channelselect { font-size: 150% }
+#controls input[type="button"]:hover { background-color: yellow }
+#controls input[type="text"] { border: 2px; width: 50px }
+#response { background-color: #880; }
+
+
+</style>
+<script>
+
+var width = 900;  
+var height = 200; 
+
+var expscaleperunit = 0.05/16; 
+var bpause = false; 
+
+// class for a single time sequence
+function TimeSeq(name, col, labx) {
+    this.name = name; 
+    this.col = col; 
+    this.labx = labx; 
+    this.timeseq = [ ];
+    this.maxtimeseq = 0; 
+    this.mintimeseq = 0; 
+}
+
+TimeSeq.prototype.addtimeseq = function(v) {
+    if ((this.timeseq.length == 0) || (v > this.maxtimeseq)) {
+        this.maxtimeseq = v; 
+    }
+    if ((this.timeseq.length == 0) || (v < this.mintimeseq)) {
+        this.mintimeseq = v; 
+    }
+    this.timeseq.push(v); 
+}
+
+TimeSeq.prototype.cleartimeseq = function() {
+    this.timeseq = [ ]; 
+}
+TimeSeq.prototype.removefronttimeseqs = function(n) {
+    ltimeseq = this.timeseq; 
+    this.cleartimeseq(); 
+    for (var i = n; i < ltimeseq.length; i++)
+        this.addtimeseq(ltimeseq[i]); 
+    console.log("remove", n);
+}
+TimeSeq.prototype.gettimeseqval = function(i) {
+    var d = (this.maxtimeseq - this.mintimeseq); 
+    return (d != 0 ? 1-(this.timeseq[i] - this.mintimeseq)/d : 0); 
+}
+
+TimeSeq.prototype.makerpath = function(bclear) {
+    var yoff = 10; 
+    var hoff = height - 50; 
+    var woff = 10, wmarg = 20; 
+    
+    var c = document.getElementById("holder");
+    if (bclear) {
+        c.width = width; 
+        c.height = height; 
+    }
+    var ctx = c.getContext("2d");
+
+    ctx.beginPath();
+    ctx.strokeStyle = this.col;
+    var v0 = this.timeseq[this.timeseq.length-1]; 
+    var y0 = Math.round(this.gettimeseqval(this.timeseq.length-1)*height); 
+    
+    ctx.font="20px Georgia";
+    ctx.fillStyle = this.col; 
+    var di = (v0>50000 ? 0 : 2); 
+    ctx.fillText(this.mintimeseq.toFixed(di), this.labx, yoff+hoff);
+    ctx.fillText(this.maxtimeseq.toFixed(di), this.labx, yoff+20);
+    ctx.fillText(v0.toFixed(di), this.labx+300, yoff+20);
+
+    ctx.moveTo(woff, y0); 
+    var gx = 1.0; 
+    var i;
+    for (i = this.timeseq.length - 2; i >= 0; i--) {
+        gx *= (1-expscaleperunit); // exponential approach right hand side
+        var x = width-woff-Math.round(gx*(width-woff*2)); 
+        ctx.lineTo(x, Math.round(this.gettimeseqval(i)*height)); 
+        if (x > width - wmarg)
+            break; 
+    }
+    ctx.stroke(); 
+    if (i > 20) 
+        this.removefronttimeseqs(i); 
+}
+
+
+var tseq2 = new TimeSeq("baro", "#008888", 30); 
+var tseq3 = new TimeSeq("humid", "#BBBBBB", 150); 
+var tseq1 = new TimeSeq("temp", "#FFFF00", 230); 
+var wss = null; 
+
+function cleartimeseqs() {
+    tseq2.cleartimeseq(); 
+    tseq3.cleartimeseq(); 
+    tseq1.cleartimeseq(); 
+}
+    
+function WSSeq(wsurl, tseq) {
+    this.tseq = tseq; 
+    this.Dsimulatedsetinterval = null; 
+    if (wsurl !== null) {
+        this.ws = this.setupws(wsurl); 
+    } else {
+        this.ws = null; 
+    }
+}
+
+WSSeq.prototype.kill = function() {
+    if (this.ws) {
+        this.ws.onerror = null; 
+        this.ws.close(); 
+    }
+    if (this.Dsimulatedsetinterval !== null)
+        clearInterval(this.Dsimulatedsetinterval); 
+}
+
+var Dnmess = 0; 
+WSSeq.prototype.setupws = function(wsurl) {
+    var ws = new WebSocket(wsurl);
+    ws.onerror = function(e) { 
+        console.log(e);  alert("websocket no good"); 
+    };
+    ws.onopen = function() { ws.send("Hello"); };
+    
+    var tseq = this.tseq; 
+    ws.onmessage = function(evt) {
+        Dnmess += 1; 
+        if ((Dnmess % 20) == 0)
+            console.log(evt); 
+        bb = evt; 
+        if ((typeof evt.data === "string") && (evt.data.length == 16)) {   // encoding values into hexlified ascii
+            var nums = [ parseInt(evt.data.substr(0, 8), 16), parseInt(evt.data.substr(8, 8), 16) ]; 
+            if ((nums !== null) && !bpause) {
+                document.getElementById("responsenumbers").innerHTML = nums.join(" "); 
+                tseq2.addtimeseq(nums[1]/256);
+                tseq2.makerpath(true);
+            } else {
+                document.getElementById("response").innerHTML = evt.data; 
+            }
+        } else if ((typeof evt.data === "string") && (evt.data.length == 32)) {   // encoding values into hexlified ascii
+            var nums = [ parseInt(evt.data.substr(0, 8), 16), parseInt(evt.data.substr(8, 8), 16), 
+                         parseInt(evt.data.substr(16, 8), 16), parseInt(evt.data.substr(24, 8), 16) ]; 
+            if ((nums !== null) && !bpause) {
+                document.getElementById("responsenumbers").innerHTML = nums.join(" "); 
+                tseq2.addtimeseq(nums[2]/256);
+                tseq2.makerpath(true);
+                tseq1.addtimeseq(nums[1]/100);
+                tseq1.makerpath(false);
+                tseq3.addtimeseq(nums[3]/1024);
+                tseq3.makerpath(false);
+            } else {
+                document.getElementById("response").innerHTML = evt.data; 
+            }
+        } else {
+            console.log(evt); 
+        }
+    }
+    return ws; 
+}
+
+
+function setupraph() {
+    window.addEventListener("resize", setraphsize);
+    document.getElementById("channelselect").addEventListener("change", setwschannel); 
+
+    var rholder = document.getElementById("holder"); 
+    width = rholder.offsetWidth; 
+    height = rholder.offsetHeight; 
+    
+    setwschannel(); 
+}
+
+function setwschannel(wschannel) {
+    var wschannel = document.getElementById("channelselect").value; 
+    if (wss !== null) {
+        wss.kill(); 
+        wss = null; 
+    }
+    wsurl = null; 
+    if (location.hostname)
+        wsurl = "ws://" + location.hostname + "/" + wschannel + (location.port ? ":" + location.port : ""); 
+    wss = new WSSeq(wsurl, tseq1); 
+    if (wsurl === null)
+        wss.Dsimulatedsetinterval = setInterval(function() { tseq1.addtimeseq(Math.random()*0.3);  tseq1.makerpath(); }, 200); 
+    setraphsize(); 
+}
+
+function setraphsize() {
+    var rholder = document.getElementById("holder"); 
+    width = rholder.offsetWidth; 
+    height = rholder.offsetHeight; 
+}
+
+window.onload = setupraph; 
+</script>
+</head>
+<body>
+
+<canvas id="holder"></canvas>
+     
+<div id="controls">
+    <span id="response">(ws received)</span>
+    <span id="responsenumbers"></span>
+    <input type="text" name="enter" class="enter" value="" id="lolz"/>
+    <input type="button" value="sendws" onclick="wss.ws.send('hihi');"/>
+    <input type="button" value="clear" onclick="cleartimeseqs();"/>
+    <input type="button" value=">>" onclick="expscaleperunit*=2;"/>
+    <input type="button" value="<<" onclick="expscaleperunit/=2;"/>
+    <input type="button" value="pause" onclick="bpause=!bpause;"/>
+    <select id="channelselect">
+        <option>bme280,50</option>
+        <option>bme280,200</option>
+        <option>bme280,20</option>
+    </select>
+</div>
+
+</body>
+</html>
+
