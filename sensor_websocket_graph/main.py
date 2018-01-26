@@ -100,7 +100,7 @@ async def ams5611():
             t = time.ticks_ms()
             hook_ms5611[2] = MS5611convert(dc)
             if bdat:
-                nextpt(t, hook_ms5611[2], bdat)
+                nextpt(t, hook_ms5611[2]-100000, bdat)
                 nbdat += 1
                 if nbdat > 10000:
                     bdat.close()
