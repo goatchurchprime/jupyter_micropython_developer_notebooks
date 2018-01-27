@@ -9,6 +9,13 @@ As code gets finished it is placed into .py files that can be deployed using the
 To install the Jupyter Micropython kernel into your copy of Jupyter, go here: https://github.com/goatchurchprime/jupyter_micropython_kernel 
 
 ## Useful notebooks
+esp32_commissioning and esp8266_commissioning
+
+## stuff to do
+* get the async code in right place (copied out from micropython-libs with a fetch)
+* the graph should receive its types and instructions in the websocket request
+* blank websocket graphing should just give sine waves without a sensor
+* we can then combine and feed the orientation and laser sensor values into the graph
 
 ### In basicsockets/ 
 
