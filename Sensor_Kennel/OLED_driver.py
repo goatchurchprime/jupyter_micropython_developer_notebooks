@@ -56,3 +56,22 @@ for i in range(0, 128, 8):
     for j in range(0, 64, 8):
         fbuff.fill_rect(i, j, 8, 8, (i//8 + j//8)%2)
 oledshow()
+
+
+# quick function for printing numbers double-size so we can see them
+# chr45=- . / 0 1 2 3 4 5 6 7 8 9
+num8x8 = b'\x00\x08\x08\x08\x08\x08\x08\x00\x00\x00\x00``\x00\x00\x00\x00@`0\x18\x0c\x06\x02\x00>\x7fIE\x7f>\x00\x00@D\x7f\x7f@@\x00\x00bsQIOF\x00\x00"cII\x7f6\x00\x00\x18\x18\x14\x16\x7f\x7f\x10\x00\'gEE}9\x00\x00>\x7fII{2\x00\x00\x03\x03y}\x07\x03\x00\x006\x7fII\x7f6\x00\x00&oII\x7f>\x00'
+def fatntext(t, x, y):  # numbers only
+    for s in t:
+        k = max(0, min(11, ord(s) - 45))
+        for c in num8x8[k*8:k*8+8]:
+            for j in range(8):
+                if (c & (1<<j)):
+                    fbuff.fill_rect(x,y+j*2,2,2,1)
+            x += 2
+
+# copy image in corner to double size, for announcements
+def doublepixels():
+    for x in range(63, -1, -1):
+        for y in range(31, -1, -1):
+            fbuff.fill_rect(x*2,y*2,2,2,fbuff.pixel(x,y))

@@ -45,7 +45,7 @@ def SI7021humiditytempConv(bh, bt):
     return ((125.0*rh)/65536)-6, ((175.25*rt)/65536)-46.85 
 
 def SI7021humiditytemp():
-    bh, bt = SI7021humiditytempRaw()
+    bh, bt = SI7021humiditytempBin()
     return SI7021humiditytempConv(bh, bt)
 
 def DewpointTemperature(humid, temp):
