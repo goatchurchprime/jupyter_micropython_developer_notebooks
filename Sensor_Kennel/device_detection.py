@@ -19,8 +19,11 @@ def IdentifyI2CDevice(i2c):
         if partno == 5:
             res.append("TSL561 luminous")
             
-    if 0x48 in scannedi2c:
+    if 0x48 in ads:
         res.append("TMP102 temp")
+        
+    if 0x6B in ads and 0x1E in ads:
+        res.append("SDOF GyAccMag")
             
     if not res:
         desc = " ".join("%02x"%c  for c in ads  if c != 0x3c)
