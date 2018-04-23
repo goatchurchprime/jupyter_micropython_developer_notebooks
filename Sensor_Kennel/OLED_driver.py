@@ -1,5 +1,4 @@
 from machine import I2C, Pin
-
 rst = Pin(16, Pin.OUT)
 rst.value(1)
 i2c = I2C(scl=Pin(15, Pin.OUT, Pin.PULL_UP), sda=Pin(4, Pin.OUT, Pin.PULL_UP), freq=450000)
@@ -64,11 +63,13 @@ num8x8 = b'\x00\x08\x08\x08\x08\x08\x08\x00\x00\x00\x00``\x00\x00\x00\x00@`0\x18
 def fatntext(t, x, y):  # numbers only
     for s in t:
         k = max(0, min(11, ord(s) - 45))
+        if k == 1:  x -= 4   # squeeze in the decimal point
         for c in num8x8[k*8:k*8+8]:
             for j in range(8):
                 if (c & (1<<j)):
                     fbuff.fill_rect(x,y+j*2,2,2,1)
             x += 2
+        if k == 1:  x -= 4
 
 # copy image in corner to double size, for announcements
 def doublepixels():

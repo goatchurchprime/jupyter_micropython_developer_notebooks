@@ -1,3 +1,5 @@
+import time
+
 def IdentifyI2CDevice(i2c):
     res = [ ]
     ads = i2c.scan()
@@ -24,12 +26,34 @@ def IdentifyI2CDevice(i2c):
         
     if 0x6B in ads and 0x1E in ads:
         res.append("SDOF GyAccMag")
+
+    if 0x77 in ads:
+        if i2c.readfrom_mem(0x77, 0xD0, 1)[0] == 0x60:
+            res.append("BME280 barhumid")
             
     if not res:
         desc = " ".join("%02x"%c  for c in ads  if c != 0x3c)
         if desc:
             res.append("unknown %s" % desc)
-        else:
-            res.append("nothing nothing")
         
     return res
+
+# UART(1, baudrate=9600, rx=13, tx=12)
+def IdentifyUARTDevice(uart):
+    res = [ ]
+    uart.init(baudrate=115200)
+    for i in range(3):
+        uart.read()
+        uart.write(b"\xAA\x01\x00\x06")  # request chip_id and firmware version
+        time.sleep_ms(20)
+        r = uart.read()
+        if r is not None and len(r) == 8 and r[:3] == b'\xbb\x06\xa0':
+            swversion = "%d.%d" % (r[6], r[7])  # 8.3
+            res.append("BNO055 orient")
+            break
+        time.sleep(0.2)
+            
+    # next have a look for the GPS module if plugged in
+    return res
+    
+    
