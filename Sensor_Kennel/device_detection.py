@@ -30,6 +30,12 @@ def IdentifyI2CDevice(i2c):
     if 0x77 in ads:
         if i2c.readfrom_mem(0x77, 0xD0, 1)[0] == 0x60:
             res.append("BME280 barhumid")
+
+    if 0x44 in ads:
+        i2c.writeto(0x44, b'\xF3\x2D')
+        k = i2c.readfrom(0x44, 3)   # status
+        if len(k) == 3:
+            res.append("SHT31D tmphumid")
             
     if not res:
         desc = " ".join("%02x"%c  for c in ads  if c != 0x3c)
