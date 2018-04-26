@@ -53,6 +53,9 @@ def IdentifyI2CDevice(i2c):
         if k[0] == 0x8b:
             res.append("MLX90621 16x4-ir")
             
+    if 0x28 in ads:
+        res.append("PX4PITOT airspeed")
+
     if not res:
         desc = " ".join("%02x"%c  for c in ads  if c != 0x3c)
         if desc:
