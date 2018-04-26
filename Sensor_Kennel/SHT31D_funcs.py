@@ -23,6 +23,7 @@ def SHT31Dsetup(li2c):
     i2c.writeto(0x44, b'\x30\xA2')    # SHT31_SOFTRESET
     time.sleep(0.1)
     i2c.writeto(0x44, b'\x27\x37')    # read 10Hz?
+    time.sleep(0.1)
 
     i2c.writeto(0x44, b'\xF3\x2D')    # SHT31_READSTATUS
     k = i2c.readfrom(0x44, 3)

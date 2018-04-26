@@ -29,5 +29,5 @@ def VL53L0Xdist():
     #b[0] ambientCount, b[1] signalCount
     status = k[0]>>3  # accurate when this is 11
     if status == 11:
-        return b[2]/4
+        return b[2]
     return 0

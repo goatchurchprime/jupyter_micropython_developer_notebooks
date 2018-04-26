@@ -1,4 +1,4 @@
-import time
+import time, ustruct
 
 def IdentifyI2CDevice(i2c):
     res = [ ]
@@ -9,6 +9,17 @@ def IdentifyI2CDevice(i2c):
         print("Revision ID:", hex(revid), "Device ID:", hex(devid))
         if devid == 0xee:
             res.append("VL53L0X lidar")
+    
+    if 0x29 in ads:
+        def get_reg8(address):
+            i2c.writeto(0x29, ustruct.pack('>H', address))
+            return i2c.readfrom(0x29, 1)[0]
+        model = get_reg8(0x0000)
+        revision = (get_reg8(0x0001), get_reg8(0x0002))
+        module_revision = (get_reg8(0x0003), get_reg8(0x0004))
+        if model == 180:
+            print("revision", revision, "module_revision", module_revision)
+            res.append("VL6180 lidar")
             
     if 0x40 in ads:
         i2c.writeto(0x40, b'\xFC\xC9')
