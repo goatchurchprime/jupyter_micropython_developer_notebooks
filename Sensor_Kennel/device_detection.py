@@ -48,6 +48,11 @@ def IdentifyI2CDevice(i2c):
         if len(k) == 3:
             res.append("SHT31D tmphumid")
             
+    if 0x50 in ads and 0x60 in ads:
+        k = i2c.readfrom_mem(0x50, 0xD2, 1)
+        if k[0] == 0x8b:
+            res.append("MLX90621 16x4-ir")
+            
     if not res:
         desc = " ".join("%02x"%c  for c in ads  if c != 0x3c)
         if desc:

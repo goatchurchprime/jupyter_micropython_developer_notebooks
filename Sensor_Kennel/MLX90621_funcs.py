@@ -1,6 +1,6 @@
-import machine, ustruct, math
+import ustruct, math, array
 
-i2c = machine.I2C(scl=machine.Pin(15, machine.Pin.OUT, machine.Pin.PULL_UP), sda=machine.Pin(4, machine.Pin.OUT, machine.Pin.PULL_UP), freq=450000)
+from OLED_driver import i2c   # just get it from this common library
 
 # check device is plugged in
 # EEPROM is on device 0x50 and actual sensor is on 0x60
@@ -20,7 +20,6 @@ s16 = (2, "<h")
 u16 = (2, "<H")
 s8 = (1, "b")
 u8 = (1, "B")
-
 
 # read config
 config = readreg16(0x92, signed=False)
@@ -102,16 +101,18 @@ alphacomp = (1+ KsTa*(Ta - 25))*(alpha - TGC*alphaCP)
 assert TGC == 0 and KsTa == 0  # then alphacomp==alpha
 # which means it's constant and doesn't change with Ta
 
-alphacompI = [ alpha0 + readEEprom(0x80+i, u8)/(2**alpha0deltascale)  \
-               for i in range(64) ]
-
-AI = [ Acommon + readEEprom(0x00 + i, u8)*(2**deltaAscale) \
-       for i in range(64) ]
-BI = [ readEEprom(0x40 + i, s8)/(2**Bscale) \
-       for i in range(64) ]   # this is documented as 2bytes numbers but doesn't seem to be
+alphacompI = array.array("f", 
+     [ alpha0 + readEEprom(0x80+i, u8)/(2**alpha0deltascale)  for i in range(64) ])
+                         
+AI = array.array("i", 
+     [ Acommon + readEEprom(0x00 + i, u8)*(2**deltaAscale)  for i in range(64) ])
+                         
+# this is documented as 2bytes numbers but doesn't seem to be
+BI = array.array("f", 
+     [ readEEprom(0x40 + i, s8)/(2**Bscale)  for i in range(64) ])   
 
 # buffers with the data
-temperatures = [0]*64
+temperatures = array.array("f", [0]*64)
 
 def measure():
     needs_initializing = not (readreg16(0x92, signed=False) & 0x0400)  # also when power on
@@ -124,3 +125,42 @@ def measure():
         VIRcompensated = VIR - (AI[i] + BI[i]*(Ta - 25))
         #VIRcompensated = VIRoffsetcompensated/epsilon   # epsilon=1
         temperatures[i] = (VIRcompensated/alphacompI[i] + TaK4)**0.25 - 273.15
+    return temperatures
+    
+
+
+# Plotting array of pixels onto the OLED functions
+def cellfillplot(fbuff, x, y, s):
+    r = min(255, int(s*64))
+    x = x*8
+    y = y*8
+    if r < 4:
+        if r > 0:  fbuff.pixel(x+3, y+3, 1)
+        if r > 1:  fbuff.pixel(x+4, y+3, 1)
+        if r > 2:  fbuff.pixel(x+4, y+4, 1)
+        return
+    elif r < 16:
+        n = 2
+    elif r < 36:
+        n = 4
+    else:
+        n = 6
+        
+    r -= n**2
+    rx, ry = x+4-n//2, y+4-n//2
+    if r <= n:
+        fbuff.fill_rect(rx, ry, n, n, 1)
+        fbuff.hline(rx, ry-1, r, 1)
+    elif r <= 2*n + 1:
+        fbuff.fill_rect(rx, ry-1, n, n+1, 1)
+        fbuff.vline(rx+n, ry-1, r - n, 1)
+    elif r <= 3*n + 2:
+        fbuff.fill_rect(rx, ry-1, n+1, n+1, 1)
+        w = r-(2*n + 1)
+        fbuff.hline(rx+n+1-w, ry+n, w, 1)
+    else:
+        fbuff.fill_rect(rx, ry-1, n+1, n+2, 1)
+        w = min(r-(3*n + 2), n+2)
+        fbuff.vline(rx-1, ry+n+1-w, w, 1)
+
+    
