@@ -75,7 +75,14 @@ def IdentifyUARTDevice(uart):
             break
         time.sleep(0.2)
             
-    # next have a look for the GPS module if plugged in
+    uart.init(baudrate=9600)
+    for i in range(10):
+        x = uart.readline()
+        if x is not None and x[:3] == b"$GP":
+            res.append("GPS NMEA")
+            break
+        time.sleep(0.1)
+        
     return res
     
     
