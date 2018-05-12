@@ -39,8 +39,11 @@ def IdentifyI2CDevice(i2c):
         res.append("SDOF GyAccMag")
 
     if 0x77 in ads:
-        if i2c.readfrom_mem(0x77, 0xD0, 1)[0] == 0x60:
+        k = i2c.readfrom_mem(0x77, 0xD0, 1)[0]
+        if k == 0x60:
             res.append("BME280 barhumid")
+        if k == 0x55:
+            res.append("BME180 barhumid")
 
     if 0x44 in ads:
         i2c.writeto(0x44, b'\xF3\x2D')

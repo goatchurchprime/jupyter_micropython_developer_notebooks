@@ -11,7 +11,8 @@ dH1 = const(12); dH2 = const(13); dH3 = const(14); dH4 = const(15); dH5 = const(
 def bme280init(li2c):
     global i2c
     i2c = li2c
-    assert i2c.readfrom_mem(0x77, 0xD0, 1) == b'\x60', "chip not found"
+    k = i2c.readfrom_mem(0x77, 0xD0, 1)[0]
+    assert k in [0x60, 0x55], ("chip not found", hex(k))
     
     i2c.writeto_mem(0x77, 0xF2, b'\x01')  # switch on humidity (over)sampling=1
     i2c.writeto_mem(0x77, 0xF4, b'\x27')  # switch on temp and pressure (over)sampling=1, mode=normal(continuous readings)
