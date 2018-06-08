@@ -14,6 +14,7 @@ yValmsstamp = 0
 yLo128, yHi128 = 0, 0 
 yTimestmps = array.array("h", range(10))
 yTimestmpsstep = const(50)
+jGfirst = 127
 
 def scrollinit():
     global jGfirst, nscrollcount

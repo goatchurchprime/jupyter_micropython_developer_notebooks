@@ -76,3 +76,13 @@ def doublepixels():
     for x in range(63, -1, -1):
         for y in range(31, -1, -1):
             fbuff.fill_rect(x*2,y*2,2,2,fbuff.pixel(x,y))
+
+def oledshowfattext(ltxt):
+    if type(ltxt) == str:
+        ltxt = [ltxt]
+    fbuff.fill(0)
+    for i, s in enumerate(ltxt):
+        fbuff.text(s, 0, i*8, 1)
+    doublepixels()
+    oledshow()
+    

@@ -33,7 +33,7 @@ def SI7021setheater(hheater):
     i2c.writeto_mem(0x40, 0x51, bytes([nheater]))
 
 def SI7021humiditytempBin():
-    i2c.writeto(0x40, b'\xE5')  
+    i2c.writeto(0x40, b'\xE5')
     time.sleep_ms(20)   # give it time to take a reading or it fails
     bh = i2c.readfrom(0x40, 2)
     bt = i2c.readfrom_mem(0x40, 0xE0, 2)
