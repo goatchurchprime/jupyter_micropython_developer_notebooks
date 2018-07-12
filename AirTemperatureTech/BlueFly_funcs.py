@@ -52,6 +52,7 @@ def SetupGPS():
     time.sleep_ms(50)
     if not sendgpsack(b"PMTK220,1000"):
         uart.write(b"$BRB 207*\r\n") # BFV read from GPS baud 9600
+        time.sleep_ms(50)
         if sendgpsack(b"PMTK220,1000"):
             print("Change GPS to baud 57600")
             sendgpsack(b"PMTK251,57600") # set GPS baud 9600
@@ -66,9 +67,10 @@ def SetupGPS():
     else:
         print("GPS already baud 57600")
 
-    # GPGLL=0,GPRMC=5,GPVTG=1,GPGGA=1,GPGSA=0,GPGSV=0 reocrd multiples (RMC once a second, GGA 5 times a second)
+    # GPGLL=0,GPRMC=5,GPVTG=1,GPGGA=1,GPGSA=0,GPGSV=0 record multiples (RMC once a second, GGA 5 times a second)
     return sendgpsack(b"PMTK314,0,5,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") \
            and sendgpsack(b"PMTK220,200") # 5 times a second
+#while 1: x=uart.readline(); print(x.decode() if x and x[:1]==b"$" else "", end="")
 
 isotimestamp = bytearray("2099-99-99T99:99:99.999")
 mstampmidnight = 0
@@ -91,17 +93,20 @@ def ParseNMEA(lbd):
         lngminutes10000 = ((int(bd[5][:3])*60 + int(bd[5][3:5]))*10000 + int(bd[5][6:]))*(1 if bd[6] == b'E' else -1)
         veldegrees100 = int(bd[8].replace(b".", b""))
         #velknots100 = float100parse(recline + recblock[7]); 
-        
+        return b"D"  # says do not print
+    
     if bd[0] == b"$GPGGA" and bd[6] != b"0":
         SetIsoTimestampFromGps(bd[1])
         latminutes10000 = ((int(bd[2][:2])*60 + int(bd[2][2:4]))*10000 + int(bd[2][5:]))*(1 if bd[3] == b'N' else -1)
         lngminutes10000 = ((int(bd[4][:3])*60 + int(bd[4][3:5]))*10000 + int(bd[4][6:]))*(1 if bd[5] == b'E' else -1)
         altitude10 = int(bd[9].replace(b".", b""))
-        return b"Qt{:08X}u{:08X}y{:08X}x{:08X}a{:04X}\n".format(mstamp, mstampmidnight, latminutes10000&0xFFFFFFFF, lngminutes10000&0xFFFFFFFF, altitude10)
+        return "Qt{:08X}u{:08X}y{:08X}x{:08X}a{:04X}\n".format(mstamp, mstampmidnight, latminutes10000&0xFFFFFFFF, lngminutes10000&0xFFFFFFFF, altitude10).encode()
 
     if bd[0] == b"$GPVTG" and bd[9] != b"N":
         veldegrees100 = int(bd[1].replace(b".", b""))
         velkph100 = int(bd[7].replace(b".", b""))
-        return b"Vt{:08X}v{:04X}d{:06X}\n".format(mstamp, velkph100, veldegrees100)
+        if veldegrees100 != 0 or velkph100 != 0:
+            return "Vt{:08X}v{:04X}d{:06X}\n".format(mstamp, velkph100, veldegrees100).encode()
+        return b"D"
         
-    return b""
+    return b""  # says can printpreview
