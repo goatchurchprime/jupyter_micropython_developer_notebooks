@@ -45,6 +45,8 @@ def ConnectSDcardFile():
     sdfile.write("Ft[ms]p[milibars] bluefly pressure\n") 
     sdfile.write("Gt[ms]r[rawhumid]a[rawtemp] si7021Humidity meter\n") 
     sdfile.write("Nt[ms]r[rawadc]s[resistance] nickel wire sensor\n") 
+    sdfile.write("Zt[ms]xyz[linacc]abc[gravacc]wxyz[quat]s[calibstat] orient\n"); 
+    sdfile.write("Yt[ms]s\"calibconsts\" orient calib\n"); 
     sdfile.write("\n")
     sdfile.flush()
     return sdfile
@@ -83,7 +85,12 @@ def readlogbluefly():
         sdfile.write("Ft{:08X}p{:06X}\n".format(mstamp, prs))
         return prs
     if b[0] == ord(b'$') and b[-1] == ord(b'\n'):
-        pnmea = ParseNMEA(b)
+        try:
+            pnmea = ParseNMEA(b)
+        except IndexError:
+            pnmea = None
+        except ValueError:
+            pnmea = None
         if pnmea:
             if pnmea == b"D": # parsed but do not print
                 return None
@@ -91,4 +98,52 @@ def readlogbluefly():
             return pnmea
         return b
     return None
+
+
+# BNO055 funcs
+import math, time
+uart2 = None
+def bno055write1(reg, val):
+    uart2.write(bytes((0xAA, 0x00, reg, 1, val)))
+    time.sleep_ms(20)
+    v = uart2.read()
+    return v == b'\xee\x01'
+   
+def bno055read(reg, n):
+    uart2.write(bytes((0xAA, 0x01, reg, n)))
+    time.sleep_ms(20)
+    r = uart2.read()
+    if not ((r[0] == 0xBB) and (r[1] == n) and (len(r) == n + 2)):
+        raise Exception("bad bno055read %s" % str(r))
+    return r[2:]
+
+def InitBNO055(luart2):
+    global uart2
+    uart2 = luart2
+    if not bno055write1(0x3D, 0x00):  return "BAD055_1"   # PWR_MODE
+    if not bno055write1(0x3B, 0x00):  return "BAD055_2"   # UNIT_SEL, celsius, UDegrees and m/s^2
+    if not bno055write1(0x3D, 0x0C):  return "BAD055_3"   # back to NDOF mode
+    return ("Temp%d" % bno055read(0x34, 1)[0])
+    
+def ConvertQuatToEuler(q0, q1, q2, q3):
+    riqsq = q0*q0 + q1*q1 + q2*q2 + q3*q3 
+    iqsq = 1/riqsq 
+    
+    r02 = q0*q2*2 * iqsq
+    r13 = q1*q3*2 * iqsq
+    sinpitch = r13 - r02
+
+    r01 = q0*q1*2 * iqsq
+    r23 = q2*q3*2 * iqsq 
+    sinroll = r23 + r01 
+     
+    r00 = q0*q0*2 * iqsq
+    r11 = q1*q1*2 * iqsq
+    r03 = q0*q3*2 * iqsq
+    r12 = q1*q2*2 * iqsq
+    a00=r00 - 1 + r11   
+    a01=r12 + r03  
+    rads = math.atan2(a00, -a01) 
+    northorient = 180 - math.degrees(rads) 
+    return math.degrees(math.asin(sinpitch)), math.degrees(math.asin(sinroll)), northorient
 
