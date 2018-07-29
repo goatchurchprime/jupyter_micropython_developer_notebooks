@@ -37,8 +37,8 @@ def sendgpsack(comm):
     s = 0
     for c in comm:
         s ^= c
-    rcode = b"$PMTK001,%s,3"%(comm[4:].split(b",", 1)[0])
     uart.write(b"${:s}*{:02x}\r\n".format(comm, s))
+    rcode = b"$PMTK001,%s,3"%(comm[4:].split(b",", 1)[0])
     for i in range(1000):
         k = uart.readline()
         if k and k[:len(rcode)] == rcode:
@@ -55,7 +55,7 @@ def SetupGPS():
         time.sleep_ms(50)
         if sendgpsack(b"PMTK220,1000"):
             print("Change GPS to baud 57600")
-            sendgpsack(b"PMTK251,57600") # set GPS baud 9600
+            sendgpsack(b"PMTK251,57600") # set GPS baud 57600
             uart.write(b"$BRB 34*\r\n")  # BFV read from GPS at 57600
             time.sleep_ms(50)
             if not sendgpsack(b"PMTK220,1000"):
