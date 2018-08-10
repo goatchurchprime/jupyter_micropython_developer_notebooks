@@ -15,9 +15,7 @@ def bno055write1(reg, val):
         raise Exception("bad bno055write %s" % str(v))
 
 def bno055read(reg, n):
-    uart.write(b"\xAA\x01")
-    uart.write(chr(reg))
-    uart.write(chr(n))
+    uart.write(bytes((0xAA, 0x01, reg, n)))
     time.sleep_ms(20)
     r = uart.read()
     if not ((r[0] == 0xBB) and (r[1] == n) and (len(r) == n + 2)):
@@ -86,3 +84,4 @@ def BNO055calibstat():
     calibstat = bno055read(0x35, 1)[0]
     #print("sys:", (calibstat>>6)&0x03, "gyr:", (calibstat>>4)&0x03, "acc:", (calibstat>>2)&0x03, "mag:", calibstat&0x03)
     return calibstat
+

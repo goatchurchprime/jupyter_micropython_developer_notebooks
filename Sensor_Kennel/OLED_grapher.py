@@ -5,7 +5,7 @@ yR = array.array("i", range(128))
 yMin = 0
 yMax = 0
 yValFac = 0.01 
-yGridLines = int(0.1/yValFac + 0.5); 
+yGridLines = int(0.1/yValFac + 0.5) 
 yValPrec = 1
 yValOffset = 0 
 nscrollcount = 0
@@ -128,7 +128,7 @@ def plotscrollgraph(fbuff):
                 break 
             fbuff.hline(x0, yP, 128-x0, 1) 
             gval = (-yG+yValOffset)*yValFac
-            charbuf = "{:.8g}".format(gval)
+            charbuf = "{:8g}".format(gval)
             fbuff.text(charbuf, 128-len(charbuf)*8, yP+2, 1)
     
     for i in range(min(9, nscrollcount//yTimestmpsstep)-1, -1, -1):

@@ -62,7 +62,7 @@ oledshow()
 num8x8 = b'\x00\x08\x08\x08\x08\x08\x08\x00\x00\x00\x00``\x00\x00\x00\x00@`0\x18\x0c\x06\x02\x00>\x7fIE\x7f>\x00\x00@D\x7f\x7f@@\x00\x00bsQIOF\x00\x00"cII\x7f6\x00\x00\x18\x18\x14\x16\x7f\x7f\x10\x00\'gEE}9\x00\x00>\x7fII{2\x00\x00\x03\x03y}\x07\x03\x00\x006\x7fII\x7f6\x00\x00&oII\x7f>\x00'
 def fatntext(t, x, y):  # numbers only
     for s in t:
-        k = max(0, min(11, ord(s) - 45))
+        k = max(0, min(12, ord(s) - 45))
         if k == 1:  x -= 4   # squeeze in the decimal point
         for c in num8x8[k*8:k*8+8]:
             for j in range(8):
