@@ -56,6 +56,9 @@ def encodeledstring(s):
         ledstring[ledstringN] = c
         ep += 1
 
+    for e in range(8):
+        swrite(b"%c%c" % (8-e, ledstring[e] if e < ledstringN else 0x00))
+
 
 def writeledstringautoscroll(msstill=1000, mscrollletter=500):
     nscroll = max(0, ledstringN - 8)
