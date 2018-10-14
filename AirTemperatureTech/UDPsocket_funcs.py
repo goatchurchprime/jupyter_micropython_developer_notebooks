@@ -31,6 +31,7 @@ def dflush():
         try:
             rmess, udpaddr = sockudp.recvfrom(100)
             print(rmess, udpaddr)
+            return udpaddr
         except OSError as e:
             print(e)
-            
+    return None
