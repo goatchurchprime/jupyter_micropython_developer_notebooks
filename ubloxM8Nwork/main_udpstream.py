@@ -56,8 +56,8 @@ def ParseNMEA(lbd):
         for c, i in zip(bd[9], [8, 9, 5, 6, 2, 3]):
             isotimestamp[i] = c
         SetIsoTimestampFromGps(bd[1])
-        latminutes10000 = ((int(bd[3][:2])*60 + int(bd[3][2:4]))*10000 + int(bd[3][5:]))*(1 if bd[4] == b'N' else -1)
-        lngminutes10000 = ((int(bd[5][:3])*60 + int(bd[5][3:5]))*10000 + int(bd[5][6:]))*(1 if bd[6] == b'E' else -1)
+        latminutes10000 = ((int(bd[3][:2])*60 + int(bd[3][2:4]))*10000 + int(bd[3][5:9]))*(1 if bd[4] == b'N' else -1)
+        lngminutes10000 = ((int(bd[5][:3])*60 + int(bd[5][3:5]))*10000 + int(bd[5][6:10]))*(1 if bd[6] == b'E' else -1)
         if bd[8]:
             veldegrees100 = int(bd[8].replace(b".", b""))
         #velknots100 = float100parse(recline + recblock[7]); 
@@ -65,8 +65,8 @@ def ParseNMEA(lbd):
     
     if bd[0] == b"$GNGGA" and bd[6] != b"0":
         SetIsoTimestampFromGps(bd[1])
-        latminutes10000 = ((int(bd[2][:2])*60 + int(bd[2][2:4]))*10000 + int(bd[2][5:]))*(1 if bd[3] == b'N' else -1)
-        lngminutes10000 = ((int(bd[4][:3])*60 + int(bd[4][3:5]))*10000 + int(bd[4][6:]))*(1 if bd[5] == b'E' else -1)
+        latminutes10000 = ((int(bd[2][:2])*60 + int(bd[2][2:4]))*10000 + int(bd[2][5:9]))*(1 if bd[3] == b'N' else -1)
+        lngminutes10000 = ((int(bd[4][:3])*60 + int(bd[4][3:5]))*10000 + int(bd[4][6:10]))*(1 if bd[5] == b'E' else -1)
         altitude10 = int(bd[9].replace(b".", b""))
         return "Qt{:08X}u{:08X}y{:08X}x{:08X}a{:04X}\n".format(mstamp, mstampmidnight, latminutes10000&0xFFFFFFFF, lngminutes10000&0xFFFFFFFF, altitude10).encode()
 
