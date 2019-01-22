@@ -1,4 +1,3 @@
-from OLED_driver import i2c, fbuff, oledshow, doublepixels, fatntext, oledshowfattext
 from BlueFly_funcs import uart, SetupGPS, BFVmakesettings, ParseNMEA
 from machine import Pin, SPI, UART
 import os, time, math
@@ -12,8 +11,9 @@ def ConnectBluefly(oledshowfattext, vol=3):
                           b"BVL":vol  # volume (out of 1000)
                         }) and SetupGPS():
             break
-        oledshowfattext(["Turn Blu", "eFly on", str(i)])
-        time.sleep_ms(700)
+        if oledshowfattext:
+            oledshowfattext(["Turn Blu", "eFly on", str(i)])
+            time.sleep_ms(700)
 
 
 mstampSI7021 = 0
@@ -26,7 +26,7 @@ def calchumidtemps():
     return ((125.0*rh)/65536)-6, ((175.25*rt)/65536)-46.85 
 
 SI7021readfail = 0
-def InitSI7021():
+def InitSI7021(i2c):
     global SI7021readfail
     try:
         i2c.writeto(0x40, b'\xFE')  # resets chip
@@ -35,7 +35,7 @@ def InitSI7021():
     return "good"
 
 
-def readlogSI7021(dwrite):
+def readlogSI7021(i2c, dwrite):
     global mstampSI7021, SI7021readfail
     if SI7021readfail == -1:
         return

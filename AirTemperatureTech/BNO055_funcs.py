@@ -18,32 +18,82 @@ def bno055read(reg, n):
     time.sleep_ms(20)
     r = uart2.read()
     if not ((r[0] == 0xBB) and (r[1] == n) and (len(r) == n + 2)):
-        raise Exception("bad bno055read %s" % str(r))
+        return None
     return r[2:]
 
-def InitBNO055():
-    if not bno055write1(0x3D, 0x00):  return "BAD055_1"   # PWR_MODE
-    if not bno055write1(0x3B, 0x00):  return "BAD055_2"   # UNIT_SEL, celsius, UDegrees and m/s^2
-    if not bno055write1(0x3D, 0x0C):  return "BAD055_3"   # back to NDOF mode
-    return ("Temp%d" % bno055read(0x34, 1)[0])
+prevcalibvals = None
+def writecalibstat():
+    global prevcalibvals
+    cl = None
+    for lcl in open("calibfile.txt"):
+        if len(lcl) == 54:
+            cl = lcl
+    print(lcl)
+    if cl is None:
+        raise OSError("bad calib line")
+    calibs = bytearray((0xAA, 0x00, 0x55, 22))
+    for i in range(22):
+        calibs.append(int(cl[9+i*2:11+i*2], 16))
+    prevcalibvals = calibs[4:]
+    uart2.write(calibs)
+    time.sleep_ms(20)
+    v = uart2.read()
+    print(v)
+    return v == b'\xee\x01'
 
-hposlst = b').38\x0b\x10\x15\x1a\x1f$' # [41, 46, 51, 56, 11, 16, 21, 26, 31, 36]
-def readhexlifyBNO055():
+def InitBNO055():
+    if not bno055write1(0x3D, 0x00):  raise OSError("BAD055_0")   # config_mode
+    writecalibstat()
+    if not bno055write1(0x3E, 0x00):  raise OSError("BAD055_1")   # PWR_MODE normal
+    if not bno055write1(0x3B, 0x00):  raise OSError("BAD055_2")   # UNIT_SEL: C, Degs, m/s^2
+    if not bno055write1(0x3D, 0x0C):  raise OSError("BAD055_3")   # NDOF mode
+    temperatureval = bno055read(0x34, 1)
+    if temperatureval is None:
+        raise OSError("BADTEMP")
+    return ("Temp%d" % temperatureval[0])
+
+prevcalibstat = 0x00
+def recordcalibifnecessary(calibstat):
+    global prevcalibstat, prevcalibvals
+    if calibstat == 0xFF and prevcalibstat != 0xFF:
+        calibs = bno055read(0x55, 22)
+        if calibs is None:
+            return
+        if calibs != prevcalibvals:
+            print("recordingcalibs", calibs)
+            fcalib = open("calibfile.txt", "a")
+            fcalib.write(mbs[2:10])
+            fcalib.write(" ")
+            for c in calibs:
+                fcalib.write("%02X" % c)
+            fcalib.write("\n")
+            fcalib.flush()
+            fcalib.close()
+            prevcalibvals = calibs
+        else:
+            print("calibvals unchanged")
+    prevcalibstat = calibstat
+
+
+hposlst = b').38\x0b\x10\x15\x1a\x1f$' # =[41, 46, 51, 56, 11, 16, 21, 26, 31, 36]
+def readhexlifyBNO055(timeoutms=20):
     global tbno055timeout,qw,qx,qy,qz
     nr = uart2.readinto(bno055buffer)
     brec = ((bno055buffer[0] == 0xBB) and (bno055buffer[1] == 22) and (nr == 24))
     mstamp = time.ticks_ms()
     if brec:
         mbs[2:10] = b"%08X" % mstamp
-        mbs[61:63] = b"%02X" % bno055buffer[23]
+        mbs[61:63] = b"%02X" % bno055buffer[23]  # CALIB_STAT in 0x35 
         for i, p in enumerate(hposlst):
             v = bno055buffer[i*2 + 2] + (bno055buffer[i*2 + 3]<<8)
             mbs[p:p+4] = b"%04X" % v
         tbno055timeout = 0  # immediately fire off the next request
         
+        recordcalibifnecessary(bno055buffer[23])
+    
     if mstamp > tbno055timeout:
         uart2.write(b"\xAA\x01\x20\x16")
-        tbno055timeout = mstamp + 20
+        tbno055timeout = mstamp + timeoutms
     return bs if brec else None
 
 #qw,qx,qy,qz = ustruct.unpack("<HHHH", bno055buffer[2:10])

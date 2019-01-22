@@ -79,7 +79,7 @@ def SetIsoTimestampFromGps(c1):
     global mstampmidnight
     for c, i in zip(c1, [11, 12, 14, 15, 17, 18, 20, 20, 21, 22]):
         isotimestamp[i] = c
-    mstampmidnight = sum((c-ord0)*f  for c, f in zip(c1, [10*60*60*1000, 60*60*1000, 10*60*1000, 60*1000, 10*1000, 1000, 0, 100, 10, 1]))
+    mstampmidnight = sum((c-ord0)*f  for c, f in zip(c1, [10*60*60*1000, 60*60*1000, 10*60*1000, 60*1000, 10*1000, 1000, 0, 100, 10, 1]))  # multiplies out the parts of the timefield
     return True 
 
 def ParseNMEA(lbd):
