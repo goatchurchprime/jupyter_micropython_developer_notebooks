@@ -6,6 +6,10 @@ import time, machine
 pled = machine.Pin(2, machine.Pin.OUT)
 pboot = machine.Pin(0, machine.Pin.IN)
 
+for i in range(10):
+    time.sleep_ms(200)
+    pled.value(i%2)
+
 port = 9019
 sockudp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sockudp.settimeout(0.1)

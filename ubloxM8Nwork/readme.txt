@@ -28,9 +28,12 @@ Do by:
 Missing an FTDI USB to Serial converter, so tried using the onboard ESP one: Pull EN low and then plug in RX0=Green, TX0=Yellow; doesn't work from ESP32, but does from ESP8266 to ESP32, but then not directly to the M8N
 
 
+
+
  * Get stream of data going to UDP app and recording
 This works with the main_udpstream.py code
 (needed to account for 5 decimal places in the minutes field)
+
 
 
  * Start with the docs to configure it.
@@ -39,6 +42,20 @@ There's some code here:
     There's code in extrepositories/RTKLIB/src/rcv/ublox.c
 And a massive datasheet here:
     https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_%28UBX-13003221%29_Public.pdf
+
+
+
+ * The firmware downgrade https://forum.u-blox.com/index.php/1965/firmware-downgrade-m8n
+See for full list https://www.u-blox.com/en/product-resources?f%5B0%5D=property_file_product_filter%3A2688
+
+ needs u-center and the /home/julian/.wine/drive_c/Program Files (x86)/u-blox/u-center_v18.11/flash.xml file.  Check instructions.
+ 
+
+* Get the stream of *pubx commands going to the UDP records
+
+
+
+
 
 
 --------------
@@ -94,6 +111,24 @@ Then gnssId=3(BeiDou)
 Then msgId=19
 
 !UBX CFG-RATE measRate=200 navRate=1 timeRef=1=GPS time
+
+
+
+----------------------
+----------------------
+Lots is working, byt the 0x0215 command is failing (limited only to the high precision ones)
+Try to rerun this one to get data into a file that RTKLIB can load!
+
+https://github.com/PaulZC/NEO-M8T_GNSS_FeatherWing/blob/a40a0504815cf2055cf6d297de27dd14ec3316c4/Python/NEO-M8T_GNSS_RAWX_Logger.py
+----------------------
+# We have spooled the code out into test.bin, and now to run:
+wine C:\\rtklib5\\rtkconv.exe
+downloaded from: http://rtkexplorer.com/downloads/rtklib-code/
+as described at: https://github.com/PaulZC/NEO-M8T_GNSS_FeatherWing/blob/master/POST_PROCESS.md
+
+
+
+
 
 
 --------------
