@@ -28,8 +28,6 @@ Do by:
 Missing an FTDI USB to Serial converter, so tried using the onboard ESP one: Pull EN low and then plug in RX0=Green, TX0=Yellow; doesn't work from ESP32, but does from ESP8266 to ESP32, but then not directly to the M8N
 
 
-
-
  * Get stream of data going to UDP app and recording
 This works with the main_udpstream.py code
 (needed to account for 5 decimal places in the minutes field)
@@ -53,10 +51,14 @@ See for full list https://www.u-blox.com/en/product-resources?f%5B0%5D=property_
 
 * Get the stream of *pubx commands going to the UDP records
 
+wine C:/Program\ Files\ \(x86\)/u-blox/u-center_v18.11/ubxfwupdate.exe -p /dev/ttyACM1 -b 9600:9600:9600 -F C:/Program\ Files\ \(x86\)/u-blox/u-center_v18.11/flash.xml -s 1 -t 1 -v 1 "Z:/home/julian/executables/ubloxGPSfirmware/UBLOX_M8_201.89cc4f1cd4312a0ac1b56c790f7c1622.bin"
 
+/usr/bin/rtkconv_qt to convert the UBX
 
+/usr/bin/rtkpost_qt 
 
-
+Or use the files in:
+   /home/julian/executables/RTKLIB-qt-Linux-x64/
 
 --------------
 Configuration code
@@ -64,6 +66,41 @@ Configuration code
 --------------
 There's code in extrepositories/RTKLIB/src/rcv/ublox.c
 --------------
+
+*          UBX-RXM-RAW  : raw measurement data
+*          UBX-RXM-RAWX : multi-gnss measurement data
+*          UBX-RXM-SFRB : subframe buffer
+*          UBX-RXM-SFRBX: subframe buffer extension
+*
+*          UBX-TRK-MEAS and UBX-TRK-SFRBX are based on NEO-M8N (F/W 2.01).
+*          UBX-TRK-D5 is based on NEO-7N (F/W 1.00). They are not formally
+*          documented and not supported by u-blox.
+*          Users can use these messages by their own risk.
+
+#define ID_NAVSOL   0x0106      /* ubx message id: nav solution info */
+#define ID_NAVTIME  0x0120      /* ubx message id: nav time gps */
+#define ID_RXMRAW   0x0210      /* ubx message id: raw measurement data */
+#define ID_RXMSFRB  0x0211      /* ubx message id: subframe buffer */
+#define ID_RXMSFRBX 0x0213      /* ubx message id: raw subframe data */
+#define ID_RXMRAWX  0x0215      /* ubx message id: multi-gnss raw meas data */
+#define ID_TRKD5    0x030A      /* ubx message id: trace mesurement data */
+
+Undocumented but necessary
+#define ID_TRKMEAS  0x0310      /* ubx message id: trace mesurement data */
+#define ID_TRKSFRBX 0x030F      /* ubx message id: trace subframe buffer */
+
+--------------------------
+        case ID_RXMRAW  : return decode_rxmraw  (raw);
+        case ID_RXMRAWX : return decode_rxmrawx (raw);
+        case ID_RXMSFRB : return decode_rxmsfrb (raw);
+        case ID_RXMSFRBX: return decode_rxmsfrbx(raw);
+        case ID_NAVSOL  : return decode_navsol  (raw);
+        case ID_NAVTIME : return decode_navtime (raw);
+        case ID_TRKMEAS : return decode_trkmeas (raw);
+        case ID_TRKD5   : return decode_trkd5   (raw);
+        case ID_TRKSFRBX: return decode_trksfrbx(raw);
+
+
 
 Generates UBlox binary message
 extern int gen_ubx(const char *msg, unsigned char *buff)
@@ -113,7 +150,6 @@ Then msgId=19
 !UBX CFG-RATE measRate=200 navRate=1 timeRef=1=GPS time
 
 
-
 ----------------------
 ----------------------
 Lots is working, byt the 0x0215 command is failing (limited only to the high precision ones)
@@ -130,84 +166,3 @@ as described at: https://github.com/PaulZC/NEO-M8T_GNSS_FeatherWing/blob/master/
 
 
 
-
---------------
---------------
-ublox_capture.py
---------------
-dev = ublox.UBlox(opts.port, baudrate=opts.baudrate, timeout=2)
-
-dev.set_logfile(opts.log, append=opts.append)
-dev.set_binary()
-    def set_binary(self):
-	'''put a UBlox into binary mode using a NMEA string'''
-        if not self.read_only:
-            print("try set binary at %u" % self.baudrate)
-            self.send_nmea("$PUBX,41,0,0007,0001,%u,0" % self.baudrate)
-            self.send_nmea("$PUBX,41,1,0007,0001,%u,0" % self.baudrate)
-            self.send_nmea("$PUBX,41,2,0007,0001,%u,0" % self.baudrate)
-            self.send_nmea("$PUBX,41,3,0007,0001,%u,0" % self.baudrate)
-            self.send_nmea("$PUBX,41,4,0007,0001,%u,0" % self.baudrate)
-            self.send_nmea("$PUBX,41,5,0007,0001,%u,0" % self.baudrate)
-
-
-dev.configure_poll_port()
-        self.send_message(msg_class, msg_id, payload)
-        self.configure_poll(CLASS_CFG, MSG_CFG_PRT)
-CLASS_CFG = 0x06
-MSG_CFG_PRT = 0x00
-    (CLASS_CFG, MSG_CFG_USB)    : UBloxDescriptor('CFG_USB',
-                                                  '<HHHHHH32s32s32s',
-                                                  ['vendorID', 'productID', 'reserved1', 'reserved2', 'powerConsumption',
-                                                   'flags', 'vendorString', 'productString', 'serialNumber']),
-
-
-dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_USB)
-
-#dev.configure_poll(ublox.CLASS_MON, ublox.MSG_MON_HW)
-
-dev.configure_port(port=ublox.PORT_SERIAL1, inMask=1, outMask=0)
-dev.configure_port(port=ublox.PORT_USB, inMask=1, outMask=1)
-dev.configure_port(port=ublox.PORT_SERIAL2, inMask=1, outMask=0)
-dev.configure_poll_port()
-dev.configure_poll_port(ublox.PORT_SERIAL1)
-dev.configure_poll_port(ublox.PORT_SERIAL2)
-dev.configure_poll_port(ublox.PORT_USB)
-
-dev.configure_solution_rate(rate_ms=1000)
-       payload = struct.pack('<HHH', rate_ms, nav_rate=1, timeref=0)
-       self.send_message(CLASS_CFG, MSG_CFG_RATE, payload)
-MSG_CFG_RATE = 0x08
-
-dev.set_preferred_dynamic_model(opts.dynModel)
-    set_preferred_dynamic_model
-    self.configure_poll(CLASS_CFG, MSG_CFG_NAV5)
-        self.configure_poll(CLASS_CFG, MSG_CFG_PRT)
-
-dev.set_preferred_usePPP(opts.usePPP)
-        self.preferred_usePPP = int(usePPP)
-        self.configure_poll(CLASS_CFG, MSG_CFG_NAVX5)
-
-CLASS_NAV = 0x01
-CLASS_RXM = 0x02
-MSG_RXM_RAW    = 0x10
-
-
-dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_POSLLH, 1)
-dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_STATUS, 1)
-dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_SOL, 1)
-dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_VELNED, 1)
-dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_SVINFO, 1)
-dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_VELECEF, 1)
-dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_POSECEF, 1)
-dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_RAW, 1)
-dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_SFRB, 1)
-dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_SVSI, 1)
-dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_ALM, 1)
-dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_EPH, 1)
-dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_TIMEGPS, 5)
-dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_CLOCK, 5)
-#dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_DGPS, 5)
-
---------------msgId=41, portID=1=UART, inProto=0007=inRTCM(4)+inNMEA(2)+inUbx(1), outProto=0001=outNMEA(2)+outUbx(1), baudrate=115200,autobauding=0
-            self.send_nmea("$PUBX,41,1,0007,0001,%u,0" % self.baudrate)
