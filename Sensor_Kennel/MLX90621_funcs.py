@@ -2,6 +2,10 @@ import ustruct, math, array
 
 from OLED_driver import i2c   # just get it from this common library
 
+# For immediate work, pins are (clockwise view above) 
+# Tag, G, V, SDA, SCL
+# i2c = I2C(scl=Pin(15, Pin.OUT, Pin.PULL_UP), sda=Pin(4, Pin.OUT, Pin.PULL_UP), freq=450000)
+
 # check device is plugged in
 # EEPROM is on device 0x50 and actual sensor is on 0x60
 assert set(i2c.scan()).issuperset([0x50, 0x60])
