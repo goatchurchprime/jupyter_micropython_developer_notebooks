@@ -3,6 +3,7 @@ import time, ustruct
 def IdentifyI2CDevice(i2c):
     res = [ ]
     ads = i2c.scan()
+    
     if 0x29 in ads:
         revid = i2c.readfrom_mem(0x29, 0xc2, 1)[0]
         devid = i2c.readfrom_mem(0x29, 0xc0, 1)[0]
@@ -35,6 +36,9 @@ def IdentifyI2CDevice(i2c):
     if 0x48 in ads:
         res.append("TMP102 temp")
         
+    if 0x69 in ads:
+        res.append("CDM7160 CO2-gas")
+        
     if 0x6B in ads and 0x1E in ads:
         res.append("SDOF GyAccMag")
 
@@ -44,7 +48,7 @@ def IdentifyI2CDevice(i2c):
             res.append("BME280 barhumid")
         if k == 0x55:
             res.append("BME180 barhumid")
-
+            
     if 0x44 in ads:
         i2c.writeto(0x44, b'\xF3\x2D')
         k = i2c.readfrom(0x44, 3)   # status
