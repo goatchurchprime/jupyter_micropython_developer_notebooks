@@ -27,6 +27,11 @@ def IdentifyI2CDevice(i2c):
         if i2c.readfrom(0x40, 1)[0] == 21:
             res.append("SI7021 humidity")
             
+    if 0x32 in ads:
+        res.append("LP55231 LEDboard")
+        i2c.writeto(0x32, b"\x00\x40")
+        i2c.writeto(0x32, b"\x36\x53")
+            
     if 0x39 in ads:
         chip_id = i2c.readfrom_mem(0x39, 0x80 | 0x0A, 1)[0]
         partno = (chip_id >> 4) & 0x0f  # should be 5
@@ -46,8 +51,11 @@ def IdentifyI2CDevice(i2c):
         k = i2c.readfrom_mem(0x77, 0xD0, 1)[0]
         if k == 0x60:
             res.append("BME280 barhumid")
-        if k == 0x55:
+        elif k == 0x55:
             res.append("BME180 barhumid")
+        else:
+            res.append("MS5611 baro")
+            
             
     if 0x44 in ads:
         i2c.writeto(0x44, b'\xF3\x2D')
@@ -59,6 +67,9 @@ def IdentifyI2CDevice(i2c):
         k = i2c.readfrom_mem(0x50, 0xD2, 1)
         if k[0] == 0x8b:
             res.append("MLX90621 16x4-ir")
+
+    if 0x5A in ads:
+        res.append("MLX90614 tempIR")
             
     if 0x28 in ads:
         res.append("PX4PITOT airspeed")

@@ -62,11 +62,11 @@ class FMQTTQueue:
                 self.pled.value(i%2)
                 await asyncio.sleep_ms(50 if (i%4) else 250)
                 
-        self.fqueue = deque((), 3)
+        self.fqueue = deque((), 30)
         while True:
             while not self.fqueue:
                 await asyncio.sleep_ms(50)
             topic, msg = self.fqueue.popleft()
-            await self.client.publish(topic, msg, qos=1)
+            await self.client.publish(topic, msg, qos=0)
             self.npublish += 1
             
