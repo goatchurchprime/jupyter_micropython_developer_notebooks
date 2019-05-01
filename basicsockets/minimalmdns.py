@@ -64,7 +64,7 @@ def mdnshostnametoipnumber(si, name):
     return ''
 
 
-# to use
+# to use:
 # import network, time
 # si = network.WLAN(network.STA_IF) # create access-point interface
 # si.active(True)         # activate the interface
@@ -76,3 +76,7 @@ def mdnshostnametoipnumber(si, name):
 #hostipnumber = mdnshostnametoipnumber(si, hostname)
 #print(hostname, hostipnumber)
 
+# example string sent to router:
+#  'b\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x04mqtt\x05local\x00\x00\x01\x00\x01'
+# example string received from router:
+#  b'\x00\x01\x84\x00\x00\x01\x00\x01\x00\x00\x00\x00\x04mqtt\x05local\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00\x00\n\x00\x04\n\x00\x1e\xc2'
