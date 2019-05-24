@@ -35,7 +35,7 @@ def msgoutputs(msgIDmap, measRate):
 
 def rflush():
     for i in range(10):
-        uart.read()
+        uartUBX.read()
         time.sleep_ms(200)
         
 def initUBX():

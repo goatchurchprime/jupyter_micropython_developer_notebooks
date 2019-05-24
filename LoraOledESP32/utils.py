@@ -3,20 +3,8 @@
 
 # functions are broken out for easy testing in a notebook cell
 
-from machine import Pin, I2C
 import time
-import ssd1306
 from LightLora import spicontrol, sx127x
-
-oledrst = Pin(16, Pin.OUT)
-oledrst.value(1)
-i2c = I2C(scl=Pin(15), sda=Pin(4), freq=450000)
-o = ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
-def writeoled(*ss):
-    o.fill(0)
-    for i, s in enumerate(ss):
-        o.text(s, 0, i*8)
-    o.show()
 
 pkt = { }
 def _doReceive(sx12, pay):

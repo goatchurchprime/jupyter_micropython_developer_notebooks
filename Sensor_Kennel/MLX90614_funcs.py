@@ -16,12 +16,13 @@ def mlx90614temps(i2c):
         ka = i2c.readfrom_mem(0x5a, 0x06, 3)
         ki = i2c.readfrom_mem(0x5a, 0x07, 3)
         bcrcgood = (checkCRC(ka, 0x0F) and checkCRC(ki, 0xF0))
+        if ki[0] == 0 and ki[1] == 0:
+            bcrcgood = False
     except OSError:
         bcrcgood = False
     if bcrcgood:
         tempAmbient = (ka[0]+ka[1]*256)*0.02 - 273.15
         tempIR = (ki[0]+ki[1]*256)*0.02 - 273.15
         return tempAmbient, tempIR
-    else:
-        return None, None
+    return None, None
     
