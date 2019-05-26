@@ -25,6 +25,7 @@ def bno055read(reg, n):
 def InitBNO055(luart):
     global uart
     uart = luart
+    uart.init(baudrate=115200)
     bno055write1(0x3D, 0x00)   # PWR_MODE
     bno055write1(0x3B, 0x00)   # UNIT_SEL, celsius, UDegrees and m/s^2
     bno055write1(0x3D, 0x0C)   # back to NDOF mode
