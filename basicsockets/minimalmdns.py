@@ -50,9 +50,13 @@ def mdnshostnametoipnumber(si, name):
     member_info = bytes(tuple(map(int, MDNS_ADDR.split("."))) + tuple(map(int, ipnumber.split("."))))
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, member_info)
     
-    for i in range(3):
+    for i in range(9):
         q = createmdnsrequestpacket(name)
-        sock.sendto(q, (MDNS_ADDR, MDNS_PORT))
+        try:
+            sock.sendto(q, (MDNS_ADDR, MDNS_PORT))
+        except OSError as e:
+            print(e)
+            time.sleep(1)
         rr = select.select([sock], [], [], 1)[0]
         while rr:
             buf, addr = sock.recvfrom(250)
