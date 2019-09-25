@@ -1,5 +1,7 @@
+# Conversion of the C++ code at: https://github.com/jrowberg/i2cdevlib Locally at: extrepositories/i2cdevlib/Arduino/MPU6050/
+# Removed #defines that replace hex-codes that are in the documentation by text strings that are not there.
 
-import ubinascii, ustruct, time
+import ubinascii, ustruct, time, math
 
 i2c = None
 
@@ -53,9 +55,13 @@ def readMemoryBlockChunk(addr, length):
 def readMemoryBlockChunkHex(addr, length):
     return ubinascii.hexlify(readMemoryBlockChunk(addr, length)).decode().upper()
     
-
+# calibrations get run several times until the numbers settle down
+# (offsets are saved, then new offsets are measured and added in)
 # must be lying still on its back
-def calibacc():
+def calibacc(recvalues=None):
+    if recvalues is not None:
+        i2c.writeto_mem(0x68, 0x06, ustruct.pack(">hhh", recvalues[0], recvalues[1], recvalues[2]))
+        return
     v0, v1, v2 = 0, 0, 0
     n = 200
     for i in range(n):
@@ -68,8 +74,11 @@ def calibacc():
     print(v0/n, v1/n, v2/n, c0, c1, c2)
     return c0, c1, c2
 
-
-def calibgyros():
+# must be lying still
+def calibgyros(recvalues=None):
+    if recvalues is not None:
+        i2c.writeto_mem(0x68, 0x13, ustruct.pack(">hhh", recvalues[0], recvalues[1], recvalues[2]))
+        return
     v0, v1, v2 = 0, 0, 0
     n = 100
     for i in range(n):
@@ -82,17 +91,10 @@ def calibgyros():
     print(v0/n, v1/n, v2/n, c0, c1, c2)
     return c0, c1, c2
 
-def setupDMP(li2c, dmpMemoryFile="dmpMemoryv6.hex"):
+def setupDMP(li2c, dmpMemoryFile="MPU6050_dmpMemoryv6.hex"):
     global i2c
     i2c = li2c
     
-    Drev = readMemoryBlockChunk(0x7006, 1)[0]
-    DOTPValid = readBits(0x00, 0, 1)
-    DdeviceID = readBits(0x75, 6, 6)
-    assert Drev == 0xA5
-    assert DOTPValid
-    assert DdeviceID == 0x34
-
     writeBit(0x6B, 7, 1)         # PWR_MGMT_1: reset with 100ms delay
     time.sleep_ms(100)
     writeBits(0x6A, 2, 3, 0x07)  # full SIGNAL_PATH_RESET: with another 100ms delay
@@ -100,6 +102,13 @@ def setupDMP(li2c, dmpMemoryFile="dmpMemoryv6.hex"):
 
     writeByte(0x6B, 0x03) # 0000 0011 PWR_MGMT_1: unsleep, Clock Source Select PLL_Z_gyro
     time.sleep_ms(100)
+    
+    Drev = readMemoryBlockChunk(0x7006, 1)[0]
+    DOTPValid = readBits(0x00, 0, 1)
+    DdeviceID = readBits(0x75, 6, 6)
+    assert Drev == 0xA5, "revision bad %x"%Drev
+    assert DdeviceID == 0x34, "deviceID bad %x"%DdeviceID
+    assert DOTPValid
 
     writeByte(0x38, 0x00) # 0000 0000 INT_ENABLE: no Interrupt
     writeByte(0x23, 0x00) # 0000 0000 MPU FIFO_EN: (all off) Using DMP's FIFO instead
@@ -126,14 +135,21 @@ def setupDMP(li2c, dmpMemoryFile="dmpMemoryv6.hex"):
     writeBit(0x6A, 7, 0)  # setDMPEnabled(false);   
     dmpPacketSize = 28;
 
+    # calibrations of gyros and accelerometer (in case it's forgotten outside)
+    calibgyros((80, -14, 30))
+    calibacc((582, 951, 1692))
 
-    # calibrations of gyros and accelerometer
-    i2c.writeto_mem(0x68, 0x13, ustruct.pack(">hhh", 80, -14, 30))
-    i2c.writeto_mem(0x68, 0x06, ustruct.pack(">hhh", 582, 951, 1692))
+def getFIFOCount():
+    b = i2c.readfrom_mem(0x68, 0x72, 2)   # getFIFOCount() # readBytes(devAddr, MPU6050_RA_FIFO_COUNTH, 2, buffer);
+    return (b[0]<<8) + b[1]
+def setDMPEnabled(v):
+    writeByte(0x6A, 0xC4 if v else 0x44)  # DMP=Enabled, FIFO=enabled, FIFOreset
+def getIntStatus():
+    return readByte(0x3A)
+def readfifoBuffer(n):
+    return i2c.readfrom_mem(0x68, 0x74, n)
 
 
-
-import math
 def ConvertQuatToEuler(q0, q1, q2, q3):
     riqsq = q0*q0 + q1*q1 + q2*q2 + q3*q3 
     iqsq = 1/riqsq 

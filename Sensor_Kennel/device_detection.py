@@ -41,6 +41,9 @@ def IdentifyI2CDevice(i2c):
     if 0x48 in ads:
         res.append("TMP102 temp")
         
+    if 0x68 in ads:
+        res.append("MPU6050 orient")
+        
     if 0x69 in ads:
         res.append("CDM7160 CO2-gas")
         
