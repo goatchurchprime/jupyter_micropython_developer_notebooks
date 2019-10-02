@@ -14,16 +14,25 @@ cmdforshow = bytes((0x80, 0x21, # SET_COL_ADDR
 
 def oledshow():
     if buffer is not None:
-        i2c.writeto(0x3c, cmdforshow)
-        i2c.writeto(0x3c, buffer)
-    
+        try:
+            i2c.writeto(0x3c, cmdforshow)
+            i2c.writeto(0x3c, buffer)
+        except OSError as e:
+            print(e)
+        
 def oledcontrast(contrast):
     if buffer is not None:
-        i2c.writeto(0x3c, bytes((0x80, 0x81, 0x80, contrast)))
+        try:
+            i2c.writeto(0x3c, bytes((0x80, 0x81, 0x80, contrast)))
+        except OSError as e:
+            print(e)
 
 def oledinvert(invert=True):
     if buffer is not None:
-        i2c.writeto(0x3c, bytes((0x80, 0xa6 | (invert & 1))))
+        try:
+            i2c.writeto(0x3c, bytes((0x80, 0xa6 | (invert & 1))))
+        except OSError as e:
+            print(e)
 
 # Initialize OLED screen if it is there
 rst = Pin(16, Pin.OUT)
