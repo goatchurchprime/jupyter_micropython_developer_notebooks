@@ -333,9 +333,6 @@ class ABfilter:
         assert self.xybuff[Dj+n] == y
         return y 
 
-    def getvalue(self):
-        j = n-1 if (xybuffpos == 0) else xybuffpos-1
-        return xybuff[j+n]; 
         
 
 # The CO2 sensor has 50ppm noise element inherent in the sensor, which this Butterworth filter is good at ironing out to get a good result
