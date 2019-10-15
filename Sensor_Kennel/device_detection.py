@@ -50,6 +50,13 @@ def IdentifyI2CDevice(i2c):
     if 0x6B in ads and 0x1E in ads:
         res.append("SDOF GyAccMag")
 
+    if 0x76 in ads:
+        k = i2c.readfrom_mem(0x77, 0xD0, 1)[0]
+        if k == 0x60:
+            res.append("B6E280 barhumid")
+        elif k == 0x55:
+            res.append("B6E180 barhumid")
+
     if 0x77 in ads:
         k = i2c.readfrom_mem(0x77, 0xD0, 1)[0]
         if k == 0x60:
