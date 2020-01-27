@@ -78,7 +78,7 @@ def IdentifyI2CDevice(i2c):
         if k[0] == 0x8b:
             res.append("MLX90621 16x4-ir")
 
-    if 0x5A in ads:
+    if 0x5A in ads or 0x5B in ads:
         res.append("MLX90614 tempIR")
             
     if 0x28 in ads:

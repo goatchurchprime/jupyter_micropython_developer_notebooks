@@ -11,10 +11,10 @@ def checkCRC(k, mask):  # mask (matching nibble) different in case
         inCrc = data >> 8
     return (inCrc & mask) == (k[2]&mask)
 
-def mlx90614temps(i2c):
+def mlx90614temps(i2c, addr=0x5a):
     try:
-        ka = i2c.readfrom_mem(0x5a, 0x06, 3)
-        ki = i2c.readfrom_mem(0x5a, 0x07, 3)
+        ka = i2c.readfrom_mem(addr, 0x06, 3)
+        ki = i2c.readfrom_mem(addr, 0x07, 3)
         bcrcgood = (checkCRC(ka, 0x0F) and checkCRC(ki, 0xF0))
         if ki[0] == 0 and ki[1] == 0:
             bcrcgood = False
