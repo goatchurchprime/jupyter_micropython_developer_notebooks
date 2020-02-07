@@ -74,6 +74,4 @@ def readBME280(addr=0x77):
     humidityout = h >> 12
     return (tempout/100, pressureout/256, humidityout/1024)
 
-
-        
         
