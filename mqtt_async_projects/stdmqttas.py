@@ -8,15 +8,24 @@ fconfig = dict(x.strip().split(None, 1)  for x in open("config.txt"))
 config['server'] = fconfig["mqttbroker"]
 config['ssid'] = fconfig["wifiname"]
 config['wifi_pw'] = fconfig["wifipassword"]
-pinled = Pin(int(fconfig["pinled"]), Pin.OUT)  if "pinled" in fconfig  else None
+pinled = Pin(abs(int(fconfig["pinled"])), Pin.OUT)  if "pinled" in fconfig  else None
 shortmac = "{:02X}{:02X}{:02X}".format(*network.WLAN().config('mac')[-3:])
 #network.WLAN().active(0)  # disable the connection at startup
 
 def flashpinled(n=5, sl0=300, sl1=300):
     if pinled:
-        for i in range(n*2):
-            pinled.value(i%2)
+        pinledOnvalue = 0 if (fconfig["pinled"][0] == "-") else 1
+        for i in range(1, n*2+1):
+            pinled.value((i%2)==pinledOnvalue)
             time.sleep_ms(sl0 if (i%2) else sl1)
+
+async def flashledconnectedtask(client):
+    pinledOnvalue = 0 if (fconfig["pinled"][0] == "-") else 1
+    while True:
+        pinled.value(pinledOnvalue)
+        await asyncio.sleep_ms(50  if client.isconnected()  else 500)
+        pinled.value(1-pinledOnvalue)
+        await asyncio.sleep_ms(5000)
 
 async def mqttconnecttask(client, bflip=False):
     if bflip and "wifialt" in fconfig:
