@@ -10,7 +10,7 @@ cmdforshow = bytes((0x80, 0x21, # SET_COL_ADDR
                     0x80, 0x22, # SET_PAGE_ADDR
                     0x80, 0,    # 0
                     0x80, 7     # height//8 - 1
-                  ))   
+                  ))
 
 def oledshow():
     if buffer is not None:
@@ -19,11 +19,27 @@ def oledshow():
             i2c.writeto(0x3c, buffer)
         except OSError as e:
             print(e)
-        
+
 def oledcontrast(contrast):
     if buffer is not None:
         try:
             i2c.writeto(0x3c, bytes((0x80, 0x81, 0x80, contrast)))
+        except OSError as e:
+            print(e)
+
+def oledmirror(mirrorX=False,mirrorY=False):
+    if buffer is not None:
+        try:
+            if mirrorX:
+                i2c.writeto(0x3c, bytes((0x80, 0xa0)))
+            else:
+                i2c.writeto(0x3c, bytes((0x80, 0xa1)))
+
+            if mirrorY:
+                i2c.writeto(0x3c, bytes((0x80, 0xc0)))
+            else:
+                i2c.writeto(0x3c, bytes((0x80, 0xc8)))
+
         except OSError as e:
             print(e)
 
@@ -38,7 +54,7 @@ def oledinvert(invert=True):
 rst = Pin(16, Pin.OUT)
 rst.value(1)
 if 0x3c in i2c.scan():
-    
+
     # There is an extra byte to the data buffer to hold an I2C data/command byte
     # to use hardware-compatible I2C transactions.
     buffer = bytearray(((64 // 8) * 128) + 1)
@@ -64,14 +80,14 @@ if 0x3c in i2c.scan():
                        ))
     for c in cmdforinit:
         i2c.writeto(0x3c, bytes((0x80, c)))
-        
-        
+
+
     # checkerboard starting page
     for i in range(0, 128, 8):
         for j in range(0, 64, 8):
             fbuff.fill_rect(i, j, 8, 8, (i//8 + j//8)%2)
     oledshow()
-    
+
 else:
     print("OLED i2c not found")
     fbuff = framebuf.FrameBuffer1(bytearray(0), 0, 0)
@@ -107,4 +123,3 @@ def oledshowfattext(ltxt):
             fbuff.text(s, 0, i*8, 1)
         doublepixels()
         oledshow()
-    
