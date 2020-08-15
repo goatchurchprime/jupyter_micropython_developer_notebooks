@@ -17,8 +17,6 @@ pinled = Pin(abs(int(fconfig["pinled"])), Pin.OUT)  if "pinled" in fconfig  else
 shortmac = "{:02X}{:02X}{:02X}".format(*network.WLAN().config('mac')[-3:])
 topicstem = "%s/%s" % (sys.platform, shortmac)
 network.WLAN().active(0)   # disable the connection at startup
-topicstatus = topicstem+"/status"
-config['will'] = (topicstatus, "offline", True)
 config['ping_interval'] = 30
 
 def flashpinled(n=5, sl0=300, sl1=300):
@@ -50,7 +48,6 @@ async def mqttconnecttask(client, cnumber=None):
         print("await connecting to:", client._ssid, client.server)
         await client.connect()
         print("*** connected:")
-        await client.publish(topicstatus, "connected", retain=True)
         flashpinled(10, 100, 100)
         return
     except OSError as e:
