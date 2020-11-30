@@ -38,10 +38,12 @@ async def mqttconnecttask(client, cnumber=None):
     if cnumber is not None:
         if ("connection%d"%cnumber) not in fconfig:
             cnumber = 0
-        client._ssid, client._wifi_pw, client.server = \
-            fconfig.get("connection%d"%cnumber, \
+        y = fconfig.get("connection%d"%cnumber, \
             cdelimeter.join(fconfig.get(x, 'x') for x in ['wifiname', 'wifipassword', 'mqttbroker']))\
             .split(cdelimeter)
+        print(y)
+        client._ssid, client._wifi_pw, client.server = y
+
     else:
         cnumber = 0
     try:
