@@ -71,5 +71,11 @@ async def callbackcmdtask(client, topicreply, codemsg):
         await client.publish(topicreply+'/exception', str(e))
     return
     
-    
+def itertools_count():
+    n = 0
+    while True:
+        yield n
+        n += 1
+
+
 
