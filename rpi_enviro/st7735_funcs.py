@@ -1,15 +1,22 @@
 from machine import Pin, SPI
-import framebuf, time
+import framebuf, time, sys
 
 width, height = 80, 160
 
 fdata = bytearray(width*height*2)
 fbuf = framebuf.FrameBuffer(fdata, width, height, framebuf.RGB565)
 
-spi = SPI(1, baudrate=10000000, polarity=0, phase=0, sck=Pin(14), mosi=Pin(13), miso=Pin(12))
-cs = Pin(18, Pin.OUT)
-dc = Pin(16, Pin.OUT)
-backlight = Pin(17, Pin.OUT)
+
+if sys.platform == "esp32":
+    spi = SPI(1, baudrate=10000000, polarity=0, phase=0, sck=Pin(14), mosi=Pin(13), miso=Pin(12))
+    cs = Pin(18, Pin.OUT)
+    dc = Pin(16, Pin.OUT)
+    backlight = Pin(17, Pin.OUT)
+else:
+    spi = SPI(0)
+    cs = Pin(7, Pin.OUT)
+    dc = Pin(9, Pin.OUT)
+    backlight = Pin(12, Pin.OUT)
 
 def color565(r, g, b):
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
