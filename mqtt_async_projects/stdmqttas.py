@@ -14,6 +14,8 @@ else:
     config['server'] = fconfig["mqttbroker"]
 
 pinled = Pin(abs(int(fconfig["pinled"])), Pin.OUT)  if "pinled" in fconfig  else None
+pinledOnvalue = 0 if (fconfig.get("pinled", "+")[0] == "-") else 1
+
 shortmac = "{:02X}{:02X}{:02X}".format(*network.WLAN().config('mac')[-3:])
 topicstem = "%s/%s" % (sys.platform, shortmac)
 network.WLAN().active(0)   # disable the connection at startup
@@ -21,7 +23,6 @@ config['ping_interval'] = 30
 
 def flashpinled(n=5, sl0=300, sl1=300):
     if pinled:
-        pinledOnvalue = 0 if (fconfig["pinled"][0] == "-") else 1
         for i in range(1, n*2+1):
             pinled.value((i%2)==pinledOnvalue)
             time.sleep_ms(sl0 if (i%2) else sl1)
