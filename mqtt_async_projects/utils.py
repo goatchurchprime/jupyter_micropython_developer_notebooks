@@ -30,3 +30,10 @@ def updateconfig(c="config.txt"):
                 fout.write("\n")
         os.rename(cd, c)
         
+def crc8(b):
+    crc = 0xFF
+    for c in b:
+        crc ^= c
+        for i in range(8):
+            crc = 0xFF & (((crc << 1) ^ 0x31) if (crc & 0x80) else (crc << 1))
+    return crc

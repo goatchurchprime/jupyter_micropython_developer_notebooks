@@ -1,17 +1,11 @@
 import time, network, sys
-from machine import Pin
-from mqtt_as import config
+from machine import Pin, WDT
+from mqtt_as import config, MQTTClient
 import uasyncio as asyncio
-from mqtt_as import config
     
 fconfig = dict(x.strip().split(None, 1)  for x in open("config.txt"))
 cdelimeter = fconfig.get("cdelimeter", ",")
-if "connection0" in fconfig:
-    config['ssid'], config['wifi_pw'], config['server'] = fconfig["connection0"].split(cdelimeter)
-else:
-    config['ssid'] = fconfig["wifiname"]
-    config['wifi_pw'] = fconfig["wifipassword"]
-    config['server'] = fconfig["mqttbroker"]
+clientsingleton = [ ]
 
 pinled = Pin(abs(int(fconfig["pinled"])), Pin.OUT)  if "pinled" in fconfig  else None
 pinledOnvalue = 0 if (fconfig.get("pinled", "+")[0] == "-") else 1
@@ -35,42 +29,28 @@ async def flashledconnectedtask(client):
         pinled.value(1-pinledOnvalue)
         await asyncio.sleep_ms(5000)
 
-async def mqttconnecttask(client, cnumber=None):
-    if cnumber is not None:
-        if ("connection%d"%cnumber) not in fconfig:
-            cnumber = 0
-        y = fconfig.get("connection%d"%cnumber, \
-            cdelimeter.join(fconfig.get(x, 'x') for x in ['wifiname', 'wifipassword', 'mqttbroker']))\
-            .split(cdelimeter)
-        print(y)
-        client._ssid, client._wifi_pw, client.server = y
-
-    else:
+async def mqttconnecttask(cnumber=0):
+    if ("connection%d"%cnumber) not in fconfig:
         cnumber = 0
+    y = fconfig.get("connection%d"%cnumber, \
+        cdelimeter.join(fconfig.get(x, 'x') for x in ['wifiname', 'wifipassword', 'mqttbroker']))\
+        .split(cdelimeter)
+    print("attempting connection%d"%cnumber, y)
+    config["ssid"], config["wifi_pw"], config["server"] = y
     try:
-        print("await connecting to:", client._ssid, client.server)
+        client = MQTTClient(config)
+        client.DEBUG = True
+        print("await connect")
         await client.connect()
-        print("*** connected:")
+        print("*** connected")
         flashpinled(10, 100, 100)
+        clientsingleton.append(client)
         return
     except OSError as e:
         print("client connect error", [e], "retasking...")
-        
     flashpinled(5, 300, 50)
     aloop = asyncio.get_event_loop()
-    aloop.create_task(mqttconnecttask(client, cnumber+1))
-    
-
-# mosquitto_pub -h mqtt.local -t "esp8266maggas1/cmd" -m "print('hi there')"   
-async def callbackcmdtask(client, topicreply, codemsg):
-    print("executing", [codemsg])
-    try:
-        exec(codemsg)
-        await client.publish(topicreply, "1")
-    except Exception as e:
-        print(e)
-        await client.publish(topicreply+'/exception', str(e))
-    return
+    aloop.create_task(mqttconnecttask(cnumber+1))
     
 def itertools_count():
     n = 0
@@ -78,5 +58,18 @@ def itertools_count():
         yield n
         n += 1
 
+async def WatchDogtask(wdtsecs):
+    await asyncio.sleep_ms(20*1000)
+    print("Starting Watchdog timer for", wdtsecs, "seconds")
+    wd = WDT(timeout=int(wdtsecs*1000))
+    while True:
+        await asyncio.sleep_ms(1*1000)
+        if clientsingleton and clientsingleton[0].isconnected():
+            wd.feed()
+            await asyncio.sleep_ms(9*1000)
+        elif pinled:
+            pinled.value(pinledOnvalue)
+            await asyncio.sleep_ms(1*1000)
+            pinled.value(not pinledOnvalue)
 
 
