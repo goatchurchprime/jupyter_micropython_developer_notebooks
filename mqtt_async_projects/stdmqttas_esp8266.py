@@ -33,26 +33,16 @@ def flashpinled(n=5, sl0=300, sl1=300):
             pinled.value((i%2)==pinledOnvalue)
             time.sleep_ms(sl0 if (i%2) else sl1)
 
-async def flashledconnectedtask():
+async def flashledconnectedtask(client):
     pinledOnvalue = 0 if (fconfig["pinled"][0] == "-") else 1
     while True:
         pinled.value(pinledOnvalue)
-        await asyncio.sleep_ms(50  if (sclient() and sclient().isconnected())  else 500)
+        await asyncio.sleep_ms(50  if client.isconnected()  else 500)
         pinled.value(1-pinledOnvalue)
         await asyncio.sleep_ms(5000)
 
-async def mqttconnecttask(cnumber=0):
-    if ("connection%d"%cnumber) not in fconfig:
-        cnumber = 0
-    y = fconfig.get("connection%d"%cnumber, \
-        cdelimeter.join(fconfig.get(x, 'x') for x in ['wifiname', 'wifipassword', 'mqttbroker']))\
-        .split(cdelimeter)
-    print("attempting connection%d"%cnumber, y)
-    config["ssid"], config["wifi_pw"], config["server"] = y
+async def mqttconnecttask(client):
     try:
-        client = MQTTClient(config)
-        client.DEBUG = True
-        client.connectioncount = 0
         print("await connect")
         await client.connect()
         print("*** connected")
@@ -97,7 +87,4 @@ async def callbackcmdtask(client, topicreply, codemsg):
         await client.publish(topicreply+'/exception', str(e))
     return
 
-
-
-   
 
